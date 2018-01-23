@@ -65,13 +65,27 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports) {
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__hellorust__ = __webpack_require__(1);
 /**
  * @author Philip Van Raalte
  * @date 2018-01-22
  */
-let memory;
+
+
+let Module = {};
+let Sha1 = {
+  digest: function(str) {
+    let buf = Object(__WEBPACK_IMPORTED_MODULE_0__hellorust__["b" /* newString */])(Module, str);
+    let outptr = Module.digest(buf);
+    let result = Object(__WEBPACK_IMPORTED_MODULE_0__hellorust__["a" /* copyCStr */])(Module, outptr);
+    Module.dealloc(buf);
+    return result;
+  }
+};
 
 function getStringFromRust(reference, length) {
     if(typeof reference === "string") {
@@ -85,7 +99,7 @@ function getStringFromRust(reference, length) {
     }
 
     return String.fromCharCode(
-      ...(new Uint8Array(memory.buffer, reference, length))
+      ...(new Uint8Array(Module.memory.buffer, reference, length))
     );
 }
 
@@ -100,8 +114,16 @@ function getStringFromRust(reference, length) {
     const results = await WebAssembly.instantiate(bytes, {});
     console.log(`loaded wasm in: ${performance.now() - startTime} milliseconds`);
 
-    const {add, get_string, get_hello, get_hello_len, divisible_by_ten} = results.instance.exports;
-    memory = results.instance.exports.memory;
+    const {
+      memory,
+      add,
+      get_string, get_hello, get_hello_len, divisible_by_ten,
+      digest, dealloc, alloc,
+      get_random_num, random_num_in_range
+    }
+      = results.instance.exports;
+
+    console.log(results.instance.exports);
 
     // returns undefined - can't return a string from wasm
     console.log(get_string());
@@ -112,14 +134,105 @@ function getStringFromRust(reference, length) {
     // get a reference to the string's location in memory and the length of the string
     console.log(get_hello(), get_hello_len());
 
+    window.add = add;
+    window.divisible_by_ten = divisible_by_ten;
+    window.get_random_num = get_random_num;
+    window.random_num_in_range = random_num_in_range;
+
+    // SHA1
+    Module.alloc = alloc;
+    Module.dealloc = dealloc;
+    Module.digest = digest;
+    Module.memory = new Uint8Array(memory.buffer);
+
     console.log(
       getStringFromRust(get_hello(), get_hello_len())
     );
 
-    window.add = add;
-    window.divisible_by_ten = divisible_by_ten;
+    console.log(
+      "SHA1",
+      Sha1.digest("my string")
+    );
+
+    console.log(get_random_num());
   }
 )();
+
+/***/ }),
+/* 1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return copyCStr; });
+/* unused harmony export fetchAndInstantiate */
+/* unused harmony export getStr */
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "b", function() { return newString; });
+/**
+ * from:
+ * https://www.hellorust.com/demos/bundle.js
+ */
+function fetchAndInstantiate(url, importObject) {
+  return fetch(url).then(response =>
+    response.arrayBuffer()
+  ).then(bytes =>
+    WebAssembly.instantiate(bytes, importObject)
+  ).then(results =>
+    results.instance
+  );
+}
+
+// Copy a nul-terminated string from the buffer pointed to.
+// Consumes the old data and thus deallocated it.
+function copyCStr(module, ptr) {
+  let orig_ptr = ptr;
+  const collectCString = function* () {
+    let memory = new Uint8Array(module.memory.buffer);
+    while (memory[ptr] !== 0) {
+      if (memory[ptr] === undefined) { throw new Error("Tried to read undef mem") }
+      yield memory[ptr];
+      ptr += 1
+    }
+  };
+
+  const buffer_as_u8 = new Uint8Array(collectCString());
+  const utf8Decoder = new TextDecoder("UTF-8");
+  const buffer_as_utf8 = utf8Decoder.decode(buffer_as_u8);
+  module.dealloc(orig_ptr);
+  return buffer_as_utf8
+}
+
+function getStr(module, ptr, len) {
+  const getData = function* (ptr, len) {
+    let memory = new Uint8Array(module.memory.buffer);
+    for (let index = 0; index < len; index++) {
+      if (memory[ptr] === undefined) { throw new Error(`Tried to read undef mem at ${ptr}`) }
+      yield memory[ptr + index]
+    }
+  };
+
+  const buffer_as_u8 = new Uint8Array(getData(ptr/8, len/8));
+  const utf8Decoder = new TextDecoder("UTF-8");
+  const buffer_as_utf8 = utf8Decoder.decode(buffer_as_u8);
+  return buffer_as_utf8;
+}
+
+function newString(module, str) {
+  const utf8Encoder = new TextEncoder("UTF-8");
+  let string_buffer = utf8Encoder.encode(str);
+  let len = string_buffer.length;
+  let ptr = module.alloc(len+1);
+
+  let memory = new Uint8Array(module.memory.buffer);
+  for (let i = 0; i < len; i++) {
+    memory[ptr+i] = string_buffer[i]
+  }
+
+  memory[ptr+len] = 0;
+
+  return ptr;
+}
+
+
 
 /***/ })
 /******/ ]);

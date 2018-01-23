@@ -1,5 +1,15 @@
-use std::ffi::CString;
-use std::os::raw::c_char;
+extern crate sha1;
+#[macro_use]
+extern crate lazy_static;
+
+use std::ffi::{CString};
+use std::os::raw::{c_char};
+
+pub mod do_sha1;
+pub mod wasm_rand;
+pub mod wasm_num;
+
+use wasm_rand::ComplementaryMultiplyWithCarryGen;
 
 #[no_mangle]
 pub fn add(a:i32, b:i32) -> i32 {

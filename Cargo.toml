@@ -7,3 +7,5 @@ authors = ["Philip Van Raalte <phil.vanraalte@gmail.com>"]
 crate-type = ["cdylib"]
 
 [dependencies]
+sha1 = "0.4.0"
+lazy_static = "1.0.0"
