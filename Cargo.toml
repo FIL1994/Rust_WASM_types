@@ -1,0 +1,9 @@
+[package]
+name = "project2"
+version = "0.1.0"
+authors = ["Philip Van Raalte <phil.vanraalte@gmail.com>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]

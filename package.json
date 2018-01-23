@@ -1,0 +1,19 @@
+{
+  "name": "project2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd scripts & copy_wasm.cmd & cd ../ & node ./node_modules/webpack-dev-server/bin/webpack-dev-server.js",
+    "build": "npm run build:rust & webpack & cd scripts & build.cmd",
+    "build:rust": "cargo build --target=\"wasm32-unknown-unknown\" --release",
+    "build:dist": "cd scripts & build.cmd",
+    "build:webpack": "webpack"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.11.1"
+  }
+}

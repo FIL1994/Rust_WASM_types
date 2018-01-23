@@ -1,0 +1,1 @@
+xcopy "..\target\wasm32-unknown-unknown\release\project2.wasm" "..\" /Y
